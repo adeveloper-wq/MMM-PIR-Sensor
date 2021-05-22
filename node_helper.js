@@ -14,6 +14,8 @@ const exec = require('child_process').exec;
 module.exports = NodeHelper.create({
     start: function () {
         this.started = false;
+	this.delay = 0;
+	this.unlockActivate = false;
     },
 
     activateMonitor: function () {
@@ -87,11 +89,12 @@ module.exports = NodeHelper.create({
         if (notification === 'CONFIG' && this.started == false) {
             const self = this;
             this.config = payload;
+	    self.delay = self.config.powerSavingDelay;
 
 	    if (self.config.powerSaving) {
                 self.deactivateMonitorTimeout = setTimeout(function() { // Set the timeout before movement is identified
                     self.deactivateMonitor();
-                }, self.config.powerSavingDelay * 1000);
+                }, self.delay * 1000);
             }
 
             // Setup for relay pin
@@ -165,7 +168,14 @@ module.exports = NodeHelper.create({
                     self.sendSocketNotification('USER_PRESENCE', true);
                     if (self.config.powerSaving){
                         clearTimeout(self.deactivateMonitorTimeout);
-                        self.activateMonitor();
+			var d = new Date().getHours();
+			if (d > 6 && d < 22){
+			    self.activateMonitor();
+			} else {
+			    if (self.unlockActivate) {
+				self.activateMonitor();
+			    }
+			}
                     }
                 }
                 else if (value == valueOff) {
@@ -176,7 +186,7 @@ module.exports = NodeHelper.create({
 
                     self.deactivateMonitorTimeout = setTimeout(function() {
                         self.deactivateMonitor();
-                    }, self.config.powerSavingDelay * 1000);
+                    }, self.delay * 1000);
                 }
             });
 
@@ -192,7 +202,11 @@ module.exports = NodeHelper.create({
 	    }
         } else if (notification === 'SCREEN_WAKEUP') {
             this.activateMonitor();
-        }
+        } else if (notification == 'CONFIG_SET_SCREEN_DELAY') {
+	    this.delay = payload;
+	} else if (notification == 'NIGHT_DISPLAY_TOGGLE_ACTIVATE') {
+	    this.unlockActivate = payload;
+	}
     }
 
 });

@@ -71,6 +71,12 @@ Module.register('MMM-PIR-Sensor',{
 	notificationReceived: function (notification, payload) {
 		if (notification === 'SCREEN_WAKEUP') {
 			this.sendNotification(notification, payload)
+		} else if (notification === "SCREEN_SET_DELAY") {
+			Log.info("Set powerSavingDelay to " + payload);
+			this.sendSocketNotification('CONFIG_SET_SCREEN_DELAY', payload);
+		} else if (notification === "UNLOCK_DISPLAY_ACTIVATE_AT_NIGHT") {
+			Log.info("Unlock activation at night toggled to " + payload);
+			this.sendSocketNotification('NIGHT_DISPLAY_TOGGLE_ACTIVATE', payload);
 		}
 	},
 
